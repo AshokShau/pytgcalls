@@ -210,7 +210,14 @@ class PyrogramClient(BridgedClient):
                 update,
                 UpdateGroupCall,
             ):
-                chat_id = self.chat_id(chats[update.chat_id])
+                if hasattr(update, 'chat_id'):
+                    chat_id = self.chat_id(chats[update.chat_id])
+                else:
+                    if getattr(update, 'peer', None):
+                        chat_id = self.chat_id(update.peer)
+                    else:
+                        chat_id = self._cache.get_chat_id(update.call.id)
+
                 if isinstance(
                     update.call,
                     GroupCall,
