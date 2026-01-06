@@ -216,6 +216,9 @@ class TelethonClient(BridgedClient):
                     else:
                         chat_id = self._cache.get_chat_id(update.call.id)
 
+                if not chat_id:
+                    return
+
                 if isinstance(
                     update.call,
                     GroupCall,
