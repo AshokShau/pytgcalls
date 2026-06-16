@@ -80,7 +80,8 @@ class ClientCache:
             chat_id,
         )
         if input_call is not None:
-            if self._call_participants_cache.get(chat_id) is None:
+            participants = self._call_participants_cache.get(chat_id)
+            if participants is None:
                 if only_cached:
                     return []
                 py_logger.debug(
@@ -95,11 +96,12 @@ class ClientCache:
                         GroupCallParticipant.Action.UPDATED,
                         participant,
                     )
+                participants = self._call_participants_cache.get(chat_id)
             else:
                 py_logger.debug('GetParticipant cache hit for %d', chat_id)
-            return self._call_participants_cache.get(
-                chat_id,
-            ).get_participants()
+
+            if participants is not None:
+                return participants.get_participants()
         return []
 
     def get_chat_id(
@@ -108,9 +110,14 @@ class ClientCache:
     ) -> Optional[int]:
         for key in self._input_calls.keys:
             call = self._input_calls.get(key)
-            if call_id == call.slug if hasattr(call, 'slug') else call.id:
-                self._input_calls.update_cache(key)
-                return key
+            if call is not None:
+                if call_id == (
+                    call.slug
+                    if hasattr(call, 'slug')
+                    else call.id
+                ):
+                    self._input_calls.update_cache(key)
+                    return key
         return None
 
     def set_cache(
@@ -157,11 +164,8 @@ class ClientCache:
         self,
         phone_call_id: int,
     ) -> Optional[int]:
-        return next(
-            (
-                user_id
-                for user_id in self._input_calls.keys
-                if self._input_calls.get(user_id).id == phone_call_id
-            ),
-            None,
-        )
+        for user_id in self._input_calls.keys:
+            call = self._input_calls.get(user_id)
+            if call is not None and call.id == phone_call_id:
+                return user_id
+        return None
